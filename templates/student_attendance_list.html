@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Attendance Logs</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background-color: #f8f9fc; }
+        .table thead th { background-color: #1cc88a; color: white; } /* Green Header for Attendance */
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-white topbar mb-4 static-top shadow">
+    <a class="navbar-brand text-success font-weight-bold" href="/">
+        <i class="fas fa-list-alt"></i> Attendance Logs
+    </a>
+    <a href="/" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+</nav>
+
+<div class="container-fluid px-4">
+    <h1 class="h3 mb-4 text-gray-800">Daily Attendance Records</h1>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-success">Check-in History</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Date</th>
+                        <th>Check-in Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in student_attendance_data %}
+                    <tr>
+                        <td>{{ record.student.name }}</td> <td>{{ record.date }}</td>
+                        <td>{{ record.check_in_time }}</td>
+                        <td><span class="badge badge-success">Present</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center">No attendance records found today.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

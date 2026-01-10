@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-Powered Attendance System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #4361ee; --primary-light: #eef2ff; --secondary: #3a0ca3;
+      --success: #4cc9f0; --warning: #f72585; --light: #ffffff;
+      --light-gray: #f8f9fa; --gray: #6c757d; --dark: #212529;
+      --border: #e9ecef; --shadow: rgba(149, 157, 165, 0.1);
+      --shadow-hover: rgba(149, 157, 165, 0.2); --sidebar-bg: #ffffff;
+    }
+    body, html { font-family: 'Inter', sans-serif; background-color: var(--light-gray); color: var(--dark); min-height: 100vh; line-height: 1.6; }
+    
+    /* Top Nav */
+    .top-nav { background: var(--light); color: var(--dark); display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; border-bottom: 1px solid var(--border); box-shadow: 0 2px 10px var(--shadow); position: sticky; top: 0; z-index: 1000; }
+    .top-nav .nav-left h1 { font-size: 1.8rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+    .top-nav .nav-right a { background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
+    .top-nav .nav-right a:hover { background: var(--secondary); transform: translateY(-2px); }
+
+    /* Layout */
+    .container { display: flex; min-height: calc(100vh - 80px); }
+    
+    /* Sidebar */
+    .sidebar { width: 260px; background: var(--sidebar-bg); padding: 2rem 0; height: calc(100vh - 80px); position: sticky; top: 80px; overflow-y: auto; border-right: 1px solid var(--border); box-shadow: 2px 0 10px var(--shadow); }
+    .sidebar-header { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+    .sidebar-header h2 { color: var(--dark); font-weight: 700; font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+    .sidebar a { display: flex; align-items: center; color: var(--gray); text-decoration: none; padding: 1rem 1.5rem; margin: 0.25rem 0.5rem; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; }
+    .sidebar a:hover { background: var(--primary-light); color: var(--primary); transform: translateX(5px); }
+    .sidebar a.active { background: var(--primary); color: white; }
+    .sidebar a i { margin-right: 12px; font-size: 1.2rem; width: 24px; text-align: center; }
+
+    /* Main Content */
+    .main-content { flex-grow: 1; padding: 2rem; width: calc(100% - 260px); }
+    .dashboard-header h1 { font-size: 2.5rem; font-weight: 800; color: var(--dark); background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-section { background: white; padding: 3rem; border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); margin-bottom: 2rem; border: 1px solid var(--border); }
+    
+    /* Time & Stats */
+    .time-section { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .clock { font-size: 3.5rem; font-weight: 800; color: var(--primary); font-family: 'Inter', monospace; margin-bottom: 0.25rem; }
+    .date { font-size: 1.5rem; color: var(--gray); font-weight: 500; }
+    .greeting { font-size: 1.8rem; color: var(--secondary); font-weight: 600; font-style: italic; background: var(--primary-light); padding: 1rem 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary); }
+
+    /* Cards Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+    .stat-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 5px 15px var(--shadow); transition: all 0.3s ease; border: 1px solid var(--border); text-decoration: none; display: block; color: inherit; }
+    .stat-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px var(--shadow-hover); border-color: var(--primary); }
+    .stat-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; font-size: 1.8rem; color: white; }
+    .stat-value { font-size: 2.2rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.95rem; color: var(--gray); font-weight: 500; }
+
+    /* Card Colors */
+    .stat-card:nth-child(1) .stat-icon { background: linear-gradient(135deg, #4361ee, #3a0ca3); }
+    .stat-card:nth-child(2) .stat-icon { background: linear-gradient(135deg, #4cc9f0, #4895ef); }
+    .stat-card:nth-child(3) .stat-icon { background: linear-gradient(135deg, #7209b7, #b5179e); }
+    .stat-card:nth-child(4) .stat-icon { background: linear-gradient(135deg, #38b000, #2d9140); }
+
+    /* Footer */
+    .footer { background: white; color: var(--gray); text-align: center; padding: 2rem; font-size: 0.95rem; border-top: 1px solid var(--border); margin-left: 260px; }
+    .footer-icons { display: flex; justify-content: center; gap: 1.5rem; margin: 1.5rem 0; }
+    .footer-icons a { color: var(--gray); font-size: 1.3rem; transition: all 0.3s ease; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--light-gray); }
+    .footer-icons a:hover { color: white; background: var(--primary); transform: translateY(-3px); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      .main-content { width: 100%; padding: 1.5rem; }
+      .footer { margin-left: 0; }
+      .time-section { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <div class="nav-left"><h1><i class="fas fa-robot"></i> AI Attendance System</h1></div>
+    {% if user.is_authenticated %}
+    <div class="nav-right"><a href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></div>
+    {% else %}
+    <div class="nav-right"><a href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a></div>
+    {% endif %}
+  </nav>
+
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-header"><h2><i class="fas fa-sliders-h"></i> Dashboard Menu</h2></div>
+      <a href="{% url 'capture_student' %}" class="active"><i class="fas fa-user-plus"></i>Student Registration</a>
+      <a href="{% url 'student-list' %}"><i class="fas fa-user-friends"></i>Manage Students</a>
+      <a href="{% url 'capture_and_recognize' %}"><i class="fas fa-camera"></i>Mark Attendance</a>
+      <a href="{% url 'student_attendance_list' %}"><i class="fas fa-list-alt"></i>Attendance Details</a>
+      <a href="{% url 'camera_config_list' %}"><i class="fas fa-video"></i>Manage Cameras</a>
+    </div>
+
+    <div class="main-content">
+      <div class="dashboard-header">
+        <h1>AI-Powered Attendance System</h1>
+        <p>Welcome to the intelligent attendance management dashboard.</p>
+      </div>
+
+      <div class="hero-section">
+        <div class="time-section">
+          <div class="time-display">
+            <div class="clock" id="clock"></div>
+            <div class="date" id="date"></div>
+          </div>
+          <div class="greeting" id="greeting"></div>
+        </div>
+
+        <div class="stats-grid">
+          <a href="{% url 'student-list' %}" class="stat-card">
+            <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+            <div class="stat-value">{{ total_students }}</div>
+            <div class="stat-label">Total Students</div>
+          </a>
+
+          <a href="{% url 'student_attendance_list' %}" class="stat-card">
+            <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-value">{{ total_attendance }}</div>
+            <div class="stat-label">Attendance Records</div>
+          </a>
+
+          <a href="{% url 'student_attendance_list' %}" class="stat-card">
+            <div class="stat-icon"><i class="fas fa-sign-in-alt"></i></div>
+            <div class="stat-value">{{ total_check_ins }}</div>
+            <div class="stat-label">Today's Check-Ins</div>
+          </a>
+
+          <a href="{% url 'camera_config_list' %}" class="stat-card">
+            <div class="stat-icon"><i class="fas fa-video"></i></div>
+            <div class="stat-value">{{ total_cameras }}</div>
+            <div class="stat-label">Active Cameras</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <h3>AI-Based Attendance System</h3>
+      <p>Developed by Final Year Students of <strong>BCA (2023-2026)</strong></p>
+      <div class="footer-icons">
+        <a href="#"><i class="fab fa-github"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#"><i class="fas fa-envelope"></i></a>
+      </div>
+      <div class="copyright">&copy; 2026 All Rights Reserved | Team AKSH</div>
+    </div>
+  </footer>
+
+  <script>
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12; hours = hours ? hours : 12;
+      
+      document.getElementById('clock').innerText = `${hours}:${minutes}:${seconds} ${ampm}`;
+      
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('date').innerText = now.toLocaleDateString('en-US', options);
+
+      const hour = now.getHours();
+      let greeting = 'Good Morning! 🌞';
+      if (hour >= 12 && hour < 17) greeting = 'Good Afternoon! ⏳';
+      else if (hour >= 17) greeting = 'Good Evening! 🌙 Your dedication is inspiring!';
+      document.getElementById('greeting').innerText = greeting;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Active Link
+    document.querySelectorAll('.sidebar a').forEach(link => {
+        if(link.getAttribute('href') === window.location.pathname) link.classList.add('active');
+    });
+  </script>
+</body>
+</html>
