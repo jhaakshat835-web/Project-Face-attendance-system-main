@@ -38,10 +38,6 @@ cd Project-Face-attandence-system
 2. Create and Activate Virtual Environment
 ```bash
 python -m venv venv
-
-# For Linux/macOS
-source venv/bin/activate
-
 # For Windows
 venv\Scripts\activate
 ```
