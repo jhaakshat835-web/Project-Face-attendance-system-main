@@ -32,7 +32,7 @@ A real-time face recognition-based attendance system built using **Python**, **D
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/RajeebLochan/Project-Face-attandence-system.git
+git clone https://github.com/jhaakshat835-web/Project-Face-attendance-system-main.git
 cd Project-Face-attandence-system
 ```
 2. Create and Activate Virtual Environment
@@ -62,21 +62,14 @@ If you use the included virtual environment, run the server from the inner proje
 
 PowerShell (activate then run):
 ```powershell
-Set-Location "C:\Users\aj394\Downloads\Project-Face-attandence-system-main\Project-Face-attandence-system-main"
+Set-Location "C:\Users\aj394\Downloads\Project-Face-attandence-system-main"
 .\..\venv\Scripts\Activate.ps1
 python manage.py runserver
 ```
-
-Or run without activating the venv (direct call):
-```powershell
-& "C:\Users\aj394\Downloads\Project-Face-attandence-system-main\venv\Scripts\python.exe" "C:\Users\aj394\Downloads\Project-Face-attandence-system-main\Project-Face-attandence-system-main\manage.py" runserver
-```
-
-
 🔑 Admin Login Credentials
 
-Username: TeamRajeeb
+Username: TeamAKSH
 
-Password: Sai@2025
+Password: AKSH@123
 
 Log in to the Django admin dashboard using the above credentials to manage student data, view attendance reports, and authorize students.
