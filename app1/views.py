@@ -1,12 +1,9 @@
 import os
-import cv2
-import numpy as np
-import torch
 import base64
 import threading
 import time
-
 from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.core.files.base import ContentFile
@@ -15,18 +12,48 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 
-from facenet_pytorch import InceptionResnetV1, MTCNN
 from .models import Student, Attendance, CameraConfiguration
 
-# ================= INITIALIZE MODELS =================
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-mtcnn = MTCNN(keep_all=True, device=device)
-resnet = InceptionResnetV1(pretrained="vggface2").eval().to(device)
+# ================= LAZY LOADING GLOBALS =================
+# These variables start as None and are only loaded when needed.
+device = None
+mtcnn = None
+resnet = None
+
+def load_models():
+    """
+    Loads heavy AI libraries and models only when called.
+    This prevents the server from crashing during startup.
+    """
+    global device, mtcnn, resnet
+    
+    # Only import heavy libraries here
+    import torch
+    from facenet_pytorch import InceptionResnetV1, MTCNN
+
+    if device is None:
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    
+    if mtcnn is None:
+        mtcnn = MTCNN(keep_all=True, device=device)
+        
+    if resnet is None:
+        resnet = InceptionResnetV1(pretrained="vggface2").eval().to(device)
+        
+    return device, mtcnn, resnet
 
 # ================= FACE ENCODING =================
 def detect_and_encode(image):
+    # Import standard libraries locally to save startup memory
+    import cv2
+    import numpy as np
+    import torch
+
+    # Ensure models are loaded
+    local_device, local_mtcnn, local_resnet = load_models()
+
     with torch.no_grad():
-        boxes, _ = mtcnn.detect(image)
+        boxes, _ = local_mtcnn.detect(image)
         encodings = []
 
         if boxes is None:
@@ -43,16 +70,19 @@ def detect_and_encode(image):
 
             face = cv2.resize(face, (160, 160))
             face = np.transpose(face, (2, 0, 1))
-            face_tensor = torch.tensor(face).float().to(device) / 255.0
+            face_tensor = torch.tensor(face).float().to(local_device) / 255.0
             face_tensor = face_tensor.unsqueeze(0)
 
-            encoding = resnet(face_tensor).detach().cpu().numpy().flatten()
+            encoding = local_resnet(face_tensor).detach().cpu().numpy().flatten()
             encodings.append(encoding)
 
         return encodings
 
 # ================= LOAD KNOWN FACES =================
 def encode_uploaded_images():
+    import cv2
+    import numpy as np
+    
     known_face_encodings = []
     known_face_names = []
 
@@ -81,6 +111,8 @@ def encode_uploaded_images():
 
 # ================= FACE RECOGNITION =================
 def recognize_faces(known_encodings, known_names, test_encodings, threshold=0.6):
+    import numpy as np
+    
     names = []
     if len(known_encodings) == 0:
         return ["Unknown"] * len(test_encodings)
@@ -98,6 +130,16 @@ def recognize_faces(known_encodings, known_names, test_encodings, threshold=0.6)
 
 # ================= CAPTURE & RECOGNIZE =================
 def capture_and_recognize(request):
+    import cv2
+    
+    # 1. Load models first (This is where the heavy lifting happens)
+    try:
+        load_models()
+    except Exception as e:
+        messages.error(request, f"Error loading AI models: {e}")
+        return redirect("home")
+
+    # 2. Load student data
     known_encodings, known_names = encode_uploaded_images()
     
     if len(known_encodings) == 0:
@@ -110,6 +152,8 @@ def capture_and_recognize(request):
     found_name = [None] 
 
     def camera_thread(cam_config, stop_event):
+        import cv2 # Ensure cv2 is available in thread
+        
         src = cam_config.camera_source
         if str(src).isdigit(): src = int(src)
         
@@ -149,11 +193,7 @@ def capture_and_recognize(request):
                             stop_event.set()
                             break
             
-            # Uncomment below to see camera window (Not needed for web server)
-            # cv2.imshow(f"Cam {cam_config.name}", frame)
-            # if cv2.waitKey(1) & 0xFF == ord("q"):
-            #     stop_event.set()
-            #     break
+            # Note: cv2.imshow lines removed for server stability
 
         cap.release()
         cv2.destroyAllWindows()
@@ -182,28 +222,15 @@ def capture_and_recognize(request):
 
     return redirect("student_attendance_list") 
 
-
-# =========================================================
-#  HERE IS THE MAIN FIX: SEPARATE VIEWS FOR LIST AND ATTENDANCE
-# =========================================================
+# ================= VIEWS FOR LIST AND ATTENDANCE =================
 
 def student_list(request):
-    """
-    This view is for 'Manage Students'.
-    It uses student_list.html
-    """
     students = Student.objects.all().order_by('name')
     return render(request, "student_list.html", {"students": students})
 
 
 def student_attendance_list(request):
-    """
-    This view is for 'Attendance Details'.
-    It uses student_attendance_list.html
-    """
-    # Fetch all attendance records, ordered by latest date
     records = Attendance.objects.all().order_by("-date", "-check_in_time")
-    
     return render(request, "student_attendance_list.html", {"student_attendance_data": records})
 
 
@@ -281,14 +308,14 @@ def student_authorize(request, pk):
         student.authorized = True
         student.save()
         messages.success(request, "Student authorized successfully!")
-    return redirect("student-list") # Updated to use URL name string
+    return redirect("student-list") 
 
 def student_delete(request, pk):
     student = Student.objects.filter(pk=pk).first()
     if student:
         student.delete()
         messages.success(request, "Student deleted successfully!")
-    return redirect("student-list") # Updated to use URL name string
+    return redirect("student-list") 
 
 # ================= CAMERA SETTINGS =================
 def camera_config_list(request):
