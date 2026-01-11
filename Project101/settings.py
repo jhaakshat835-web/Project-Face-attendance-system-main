@@ -112,7 +112,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# --- CRITICAL FIX: This tells Render where to put files during deployment ---
+# --- CRITICAL DEPLOYMENT SETTING ---
+# This tells Render where to put files. It must come AFTER BASE_DIR is defined.
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
